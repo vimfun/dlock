@@ -4,13 +4,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.vavr.collection.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 
@@ -53,7 +51,6 @@ public class ClusterLock {
         }
     }
 
-
     public static void withLock(Supplier<String> keyGen, Function<String, Lock> lockGetter, Runnable runnable) {
         Supplier<Integer> supplier = () -> {
             runnable.run();
@@ -61,6 +58,7 @@ public class ClusterLock {
         };
         withLock(keyGen, lockGetter, supplier);
     }
+
     public static <T> T withLock(Supplier<String> keyGen, Function<String, Lock> lockGetter, Callable<T> callable) {
         Supplier<T> supplier = () -> {
             try {
@@ -128,48 +126,5 @@ public class ClusterLock {
                 throw new RuntimeException(e);
             }
         };
-    }
-
-    public static class RL implements Lock {
-
-        @Override
-        public void lock() {}
-
-        @Override
-        public void lockInterruptibly() throws InterruptedException {
-            throw new UnsupportedOperationException("Unimplemented method 'lockInterruptibly'");
-        }
-
-        @Override
-        public boolean tryLock() {
-            return true;
-        }
-
-        @Override
-        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-            return true;
-        }
-
-        @Override
-        public void unlock() {
-        }
-
-        @Override
-        public Condition newCondition() {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'newCondition'");
-        }
-    }
-
-    public static void main(String[] args) {
-        Function<Supplier<String>, String> fsa = sa -> sa.get();
-        String res = buildSupplierCallable(() -> "abc", k -> new RL(), lock -> lock.tryLock(0, TimeUnit.MILLISECONDS), fsa).apply(() -> "hello");
-        System.out.println(res);
-
-        res = withLocks(
-            () -> Stream.rangeBy(0, 10, 1).map(x -> x + "").asJava(),
-            k -> new RL(),
-            () -> "hello");
-        System.out.println(res);
     }
 }
